@@ -21,4 +21,4 @@ sequelize
     console.log('uh oh: ', err);
   });
 
-exports.sequelize = sequelize;
+module.exports = sequelize;
