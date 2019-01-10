@@ -1,24 +1,37 @@
-const Sequelize = require('sequelize');
-const sequelize = new Sequelize('listing-details', 'postgres', 'password', {
-  host: 'localhost',
-  dialect: 'postgres',
-  operatorsAliases: false,
+const { Pool, Client } = require('pg');
 
-  pool: {
-    max: 5,
-    min: 0,
-    acquire: 30000,
-    idle: 10000
-  }
+const client = new Pool({
+  user: 'postgres',
+  host: 'localhost',
+  database: 'listing-details',
+  password: '',
+  port: 5432
 });
 
-sequelize
-  .authenticate()
-  .then(() => {
-    console.log('Connection established...');
-  })
-  .catch((err) => {
-    console.log('uh oh: ', err);
-  });
+client.connect().catch((err) => {
+  console.log(err);
+});
 
-module.exports = sequelize;
+client.query(
+  `CREATE TABLE IF NOT EXISTS listings (
+    id  SERIAL PRIMARY KEY,
+    price integer,
+    squareFootage integer,
+    pricePerSquareFoot integer,
+    rooms integer,
+    beds integer,
+    baths integer,
+    houseType varchar(120),
+    neighborhood varchar(120),
+    streetAddress varchar(120),
+    stars varchar(120),
+    realty varchar(120),
+    shortRealty varchar(120),
+    realtor varchar(120)
+);`,
+  (err, res) => {
+    if (err) console.log(err);
+  }
+);
+
+module.exports = client;

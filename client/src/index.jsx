@@ -1,7 +1,7 @@
-import React from "react";
-import ReactDOM from "react-dom";
-import Axios from "axios";
-import Details from "./components/Details.jsx";
+import React from 'react';
+import ReactDOM from 'react-dom';
+import Axios from 'axios';
+import Details from './components/Details.jsx';
 
 class App extends React.Component {
   constructor(props) {
@@ -53,4 +53,4 @@ class App extends React.Component {
   // data-popuptext="Want to stay updated?"
 }
 
-ReactDOM.render(<App />, document.getElementById("details-container"));
+ReactDOM.render(<App />, document.getElementById('details-container'));
