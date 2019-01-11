@@ -1,18 +1,5 @@
-//const Listing = require('../../database/models/ListingSchema');
-
 const client = require('../../PostgreSQL/postgreSqlConnect.js');
 const { performance } = require('perf_hooks');
-
-// const retrieveOne = (req, res, next) => {
-//   const { id } = req.params;
-//   Listing.find({ id: id }).exec((err, data) => {
-//     if (err) {
-//       res.send(err);
-//     } else if (data) {
-//       res.send(data);
-//     }
-//   });
-// };
 
 const parseData = (data) => {
   let removeParens = data.substring(1, data.length - 1);
@@ -41,9 +28,9 @@ const getFromPostgres = (req, res) => {
   let time = performance.now();
   client.query(
     `SELECT (price, squareFootage, pricePerSquareFoot,
-    rooms, beds, baths, houseType, neighborhood, streetAddress, stars, realty,
-    shortRealty, realtor
-    ) FROM listings WHERE id = ${id};`,
+      rooms, beds, baths, houseType, neighborhood, streetAddress, stars, realty,
+      shortRealty, realtor
+      ) FROM listings WHERE id = ${id};`,
     (err, data) => {
       if (err) {
         res.send(500);
@@ -59,4 +46,4 @@ const getFromPostgres = (req, res) => {
   );
 };
 
-module.exports.retrieveOne = getFromPostgres;
+module.exports = getFromPostgres;
