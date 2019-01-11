@@ -40,8 +40,8 @@ const ranges = {
 
 let batch = { docs: [] };
 
-const max = 100000;
-const limit = 5000;
+const max = 10000000;
+const limit = 2500;
 let count = 0;
 
 const time = performance.now();
@@ -70,16 +70,12 @@ console.log('creating batch');
 createBatch();
 
 const fillInBatch = () => {
-  console.log('inserting batch data...');
   for (var i = 0; i < limit; i++) {
     let item = batch.docs[i];
     let range = 'high';
     if (i < limit * 0.75) range = 'mid';
     if (i < limit * 0.5) range = 'lowMid';
     if (i < limit * 0.25) range = 'low';
-    if (i === limit * 0.75) console.log('75%');
-    if (i === limit * 0.5) console.log('50%');
-    if (i === limit * 0.25) console.log('25%');
     //price
     item.price = faker.random.number({
       min: ranges[range].price[0],
@@ -149,12 +145,54 @@ const fillInBatch = () => {
     count++;
 
     if (i === limit - 1 && count < max) {
-      console.log('sitting on the couch...');
       db.bulk(batch, 'listings')
         .then(() => {
-          console.log(
-            'it took ' + (performance.now() - time) + ' to save ' + count
-          );
+          if (count === max * 0.1) {
+            console.log(
+              'it took ' + (performance.now() - time) + ' to save ' + count
+            );
+          }
+          if (count === max * 0.2) {
+            console.log(
+              'it took ' + (performance.now() - time) + ' to save ' + count
+            );
+          }
+          if (count === max * 0.3) {
+            console.log(
+              'it took ' + (performance.now() - time) + ' to save ' + count
+            );
+          }
+          if (count === max * 0.4) {
+            console.log(
+              'it took ' + (performance.now() - time) + ' to save ' + count
+            );
+          }
+          if (count === max * 0.5) {
+            console.log(
+              'it took ' + (performance.now() - time) + ' to save ' + count
+            );
+          }
+          if (count === max * 0.6) {
+            console.log(
+              'it took ' + (performance.now() - time) + ' to save ' + count
+            );
+          }
+          if (count === max * 0.7) {
+            console.log(
+              'it took ' + (performance.now() - time) + ' to save ' + count
+            );
+          }
+          if (count === max * 0.8) {
+            console.log(
+              'it took ' + (performance.now() - time) + ' to save ' + count
+            );
+          }
+          if (count === max * 0.9) {
+            console.log(
+              'it took ' + (performance.now() - time) + ' to save ' + count
+            );
+          }
+
           fillInBatch();
         })
         .catch((err) => {
