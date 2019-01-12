@@ -13,7 +13,8 @@ const retrieveOne = (req, res) => {
   const { id } = req.params;
   client.collection('listings').findOne({ _id: id }, (err, data) => {
     if (err) console.log(err);
-    console.log('it took ' + (performance.now() - time) + 'to query mongo');
+    console.log('it took ' + (performance.now() - time) + ' to query mongo');
+    console.log([data]);
     res.send([data]);
   });
 };

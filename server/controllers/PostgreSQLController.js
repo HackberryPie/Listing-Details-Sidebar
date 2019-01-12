@@ -38,6 +38,7 @@ const getFromPostgres = (req, res) => {
         if (data.rows[0] !== undefined) {
           res.send(parseData(data.rows[0].row));
           console.log('query time: ', performance.now() - time);
+          console.log(parseData(data.rows[0].row));
         } else {
           res.send(500);
         }

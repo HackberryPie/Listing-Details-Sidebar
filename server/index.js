@@ -4,16 +4,8 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const compression = require('compression');
 
-//this established mongo connection and leaves open
+//this established mongo query connection
 const loadConnection = require('./controllers/MongoDBController.js');
-
-//set _db var
-
-// const db = require('../MongoDB/MongoConnection.js').then((db) => {
-//   console.log(db);
-// });
-
-//const client = db.db('listing-details');
 
 const app = express();
 
