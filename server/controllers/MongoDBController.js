@@ -3,10 +3,14 @@ const { performance } = require('perf_hooks');
 
 let client;
 
-getConnection.then((db) => {
-  client = db.db('listing-details');
-  console.log('connection to mongo established');
-});
+getConnection
+  .then((db) => {
+    client = db.db('listing-details');
+    console.log('connection to mongo established');
+  })
+  .catch((err) => {
+    console.log(err);
+  });
 
 const retrieveOne = (req, res) => {
   const time = performance.now();
