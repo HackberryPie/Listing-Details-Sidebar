@@ -1,5 +1,5 @@
 const MongoClient = require('mongodb').MongoClient;
-const url = 'hello';
+const url = process.env.MONGOURI;
 
 let getConnection = () => {
   return MongoClient.connect(url)

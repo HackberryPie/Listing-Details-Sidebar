@@ -1,7 +1,7 @@
 const faker = require('faker');
 const format = require('pg-format');
 const { performance } = require('perf_hooks');
-const client = require('./postgreSqlConnect.js');
+//const client = require('./postgreSqlConnect.js');
 
 console.log('starting process...' + performance.now());
 
