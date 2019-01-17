@@ -20,8 +20,9 @@ class App extends React.Component {
   getDetails() {
     let id = document.location.pathname;
     id = parseInt(id.match(/\d+/g));
-
-    Axios.get(`/api/details/${id}`).then(({ data }) => {
+    let uri =
+      process.env.AWSURI !== undefined ? process.env.AWSURI : '/api/details/';
+    Axios.get(`${uri}${id}`).then(({ data }) => {
       console.log(data);
       this.setState({
         details: data

@@ -1,0 +1,13 @@
+config:
+  target: 'http://ec2-18-188-219-64.us-east-2.compute.amazonaws.com'
+  phases:
+    - duration: 60
+      arrivalRate: 100
+  processor: './my-functions.js'
+scenarios:
+  - name: 'Basic get request for page'
+    # call getRandomId() to generate a random id from 1 - 10,000,000
+    flow:
+      - function: 'getRandomId'
+      - get:
+          url: '/{{ id }}'
