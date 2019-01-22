@@ -1,5 +1,4 @@
 const getConnection = require('../../MongoDB/MongoConnection.js');
-const { performance } = require('perf_hooks');
 
 let client;
 
@@ -12,14 +11,10 @@ getConnection
     console.log(err);
   });
 
-const retrieveOne = (req, res) => {
-  const time = performance.now();
-  const { id } = req.params;
+const retrieveOne = (id, cb) => {
   client.collection('listings').findOne({ _id: id }, (err, data) => {
     if (err) console.log(err);
-    console.log('it took ' + (performance.now() - time) + ' to query mongo');
-    console.log([data]);
-    res.send([data]);
+    cb(data);
   });
 };
 
