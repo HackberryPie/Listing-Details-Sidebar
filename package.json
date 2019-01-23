@@ -8,7 +8,9 @@
     "prestart": "webpack -p",
     "start": "nodemon server/index.js",
     "dev-build": "webpack -d --watch",
-    "build": "webpack -p"
+    "build": "webpack -p",
+    "prehttpStart": "webpack -p",
+    "httpStart": "node server/httpServer.js"
   },
   "repository": {
     "type": "git",

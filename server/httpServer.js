@@ -1,0 +1,105 @@
+const http = require('http');
+const path = require('path');
+const fs = require('fs');
+
+const { performance } = require('perf_hooks');
+
+const dbGetOne = require('./controllers/MongoDBController.js');
+const prom = require('./prometheus/prometheus.js');
+
+const htmlHist = prom.htmlDurationMicroseconds;
+const dataHist = prom.dataRequestDurationMicroseconds;
+const statHist = prom.staticRequestDurationMicroseconds;
+
+let html;
+let staticFileCache = {};
+
+const getId = (url) => {
+  const start = url.lastIndexOf('/') + 1;
+  return url.substring(start, url.length);
+};
+
+const isStaticRequest = (url) => {
+  return url.includes('.');
+};
+
+const basePath = './client/dist';
+const serveStatic = (req, res) => {
+  const resolvedBase = path.resolve(basePath);
+  const safeSuffix = path.normalize(req.url).replace(/^(\.\.[\/\\])+/, '');
+  const fileLoc = path.join(resolvedBase, safeSuffix);
+
+  if (staticFileCache[fileLoc] !== undefined) {
+    res.statusCode = 200;
+    res.write(staticFileCache[fileLoc]);
+    return res.end();
+  }
+
+  fs.readFile(fileLoc, (err, data) => {
+    if (err) {
+      res.writeHead(404);
+      res.write('ERROR 404: Not found');
+      return res.end();
+    }
+
+    staticFileCache[fileLoc] = data;
+
+    res.statusCode = 200;
+    res.write(data);
+    return res.end();
+  });
+};
+
+const requestHandler = (req, res) => {
+  const time = performance.now();
+  prom.totalRequests.inc();
+  const htmlTimer = htmlHist.startTimer();
+  const statTimer = statHist.startTimer();
+  const dataTimer = dataHist.startTimer();
+
+  if (req.url.includes('metrics')) {
+    return prom.serveMetrics(req, res);
+  } else if (
+    req.url.includes('loaderio-9a0cfa999a746a16178738e7dfcf3aaf.txt')
+  ) {
+    res.write('loaderio-9a0cfa999a746a16178738e7dfcf3aaf');
+    return res.end();
+  } else if (req.url.includes('/api/details/')) {
+    dbGetOne(getId(req.url), (data) => {
+      res.writeHead(200);
+      res.write(JSON.stringify([data]));
+      res.end();
+      console.log('database:', performance.now() - time);
+      prom.histogramLabels(dataHist, req, res);
+      return dataTimer();
+    });
+  } else if (isStaticRequest(req.url)) {
+    serveStatic(req, res);
+    prom.histogramLabels(statHist, req, res);
+    console.log('staticFile:', performance.now() - time);
+    return statTimer();
+  } else {
+    res.writeHead(200, { 'Content-type': 'text/html' });
+    res.write(html);
+    res.end();
+    prom.histogramLabels(htmlHist, req, res);
+    console.log('html:', performance.now() - time);
+    return htmlTimer();
+  }
+};
+
+let port = 3012;
+fs.readFile('./client/dist/index.html', (err, data) => {
+  if (err) {
+    console.log(err);
+  } else {
+    html = data;
+    http.createServer(requestHandler).listen(port, (err) => {
+      if (err) {
+        console.log(err);
+      } else {
+        console.log('listening on port: ' + port);
+      }
+    });
+  }
+});
