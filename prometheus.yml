@@ -9,10 +9,10 @@ alerting:
       scheme: http
       timeout: 10s
 scrape_configs:
-  - job_name: listing-details
+  - job_name: service-listing-details
     scrape_interval: 5s
     scrape_timeout: 5s
-    metrics_path: /api/metrics
+    metrics_path: /metrics
     scheme: http
     static_configs:
       - targets:

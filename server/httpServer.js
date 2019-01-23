@@ -50,8 +50,10 @@ const serveStatic = (req, res) => {
   });
 };
 
+//note not handling bad requests at all here
+// need to add later
 const requestHandler = (req, res) => {
-  const time = performance.now();
+  // const time = performance.now();
   prom.totalRequests.inc();
   const htmlTimer = htmlHist.startTimer();
   const statTimer = statHist.startTimer();
@@ -69,21 +71,24 @@ const requestHandler = (req, res) => {
       res.writeHead(200);
       res.write(JSON.stringify([data]));
       res.end();
-      console.log('database:', performance.now() - time);
+      // console.log('database:', performance.now() - time);
       prom.histogramLabels(dataHist, req, res);
+
       return dataTimer();
     });
   } else if (isStaticRequest(req.url)) {
     serveStatic(req, res);
+
+    // console.log('staticFile:', performance.now() - time);
     prom.histogramLabels(statHist, req, res);
-    console.log('staticFile:', performance.now() - time);
     return statTimer();
   } else {
     res.writeHead(200, { 'Content-type': 'text/html' });
     res.write(html);
     res.end();
+
+    // console.log('html:', performance.now() - time);
     prom.histogramLabels(htmlHist, req, res);
-    console.log('html:', performance.now() - time);
     return htmlTimer();
   }
 };
