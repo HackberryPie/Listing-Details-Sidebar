@@ -53,7 +53,7 @@ const serveStatic = (req, res) => {
 //note not handling bad requests at all here
 // need to add later
 const requestHandler = (req, res) => {
-  // const time = performance.now();
+  const time = performance.now();
   prom.totalRequests.inc();
   const htmlTimer = htmlHist.startTimer();
   const statTimer = statHist.startTimer();
@@ -61,16 +61,22 @@ const requestHandler = (req, res) => {
 
   if (req.url.includes('metrics')) {
     return prom.serveMetrics(req, res);
-  } else if (
-    req.url.includes('loaderio-9a0cfa999a746a16178738e7dfcf3aaf.txt')
-  ) {
-    res.write('loaderio-9a0cfa999a746a16178738e7dfcf3aaf');
+  } else if (req.url.includes('loaderio-f0337bc72e02d581ff9c52de594a4351')) {
+    res.write('loaderio-f0337bc72e02d581ff9c52de594a4351');
     return res.end();
   } else if (req.url.includes('/api/details/')) {
-    dbGetOne(getId(req.url), (data) => {
+    dbGetOne(getId(req.url), (err, data) => {
+      if (err) {
+        console.log(err);
+        res.writeHead(500);
+        res.end();
+        return;
+      }
+
       res.writeHead(200);
       res.write(JSON.stringify([data]));
       res.end();
+
       // console.log('database:', performance.now() - time);
       prom.histogramLabels(dataHist, req, res);
 
