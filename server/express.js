@@ -1,5 +1,4 @@
 const express = require('express');
-const { performance } = require('perf_hooks');
 const fs = require('fs');
 
 const bodyParser = require('body-parser');
@@ -10,39 +9,21 @@ const mongoDBGetOne = require('./controllers/MongoDBController.js');
 
 const app = express();
 
-let metrics = {
-  timeForHTML: []
-};
-let start;
-
-app.use((req, res, next) => {
-  start = performance.now();
-  next();
-});
 app.use(compression());
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname + '/../client/dist')));
 
 app.get('/api/details/:id', (req, res) => {
   const { id } = req.params;
-  mongoDBGetOne(id, (data) => {
+  mongoDBGetOne(id, (err, data) => {
     res.send([data]);
   });
-});
-
-app.get('/metrics', (req, res) => {
-  let sum = 0;
-  metrics.timeForHTML.forEach((elem) => (sum += elem));
-  let average = sum / metrics.timeForHTML.length;
-
-  res.send(average.toString());
 });
 
 let html;
 
 app.get('/*', (req, res) => {
   res.sendFile(path.join(__dirname + '/../client/dist/index.html'));
-  metrics.timeForHTML.push(performance.now() - start);
 });
 
 let port = 3012;

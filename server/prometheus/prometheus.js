@@ -7,6 +7,26 @@ prometheusExporter.totalRequests = new prometheus.Counter({
   help: 'number of times server recieves a request'
 });
 
+prometheusExporter.cacheSuccess = new prometheus.Counter({
+  name: 'cache_success',
+  help: 'number of times cache is successful'
+});
+
+prometheusExporter.dataSuccess = new prometheus.Counter({
+  name: 'data_success',
+  help: 'number of times data is requested successfully'
+});
+
+prometheusExporter.dataFailures = new prometheus.Counter({
+  name: 'data_failures',
+  help: 'number of times data is requested but errors'
+});
+
+prometheusExporter.dataInvalid = new prometheus.Counter({
+  name: 'invalid_data_requests',
+  help: 'number of times data is requested incorrectly'
+});
+
 prometheusExporter.successCount = new prometheus.Counter({
   name: 'status_code_200',
   help: 'number of successes in retrieving and sending data'
@@ -39,6 +59,23 @@ prometheusExporter.staticRequestDurationMicroseconds = new prometheus.Histogram(
     buckets: [0.0001, 0.00025, 0.0005, 0.001, 0.0025, 0.005, 0.01, 0.025, 0.05]
   }
 );
+
+prometheusExporter.cacheRequestDurationMicroseconds = new prometheus.Histogram({
+  name: 'cache_get_duration_ms',
+  help: 'Duration of cache retreival requests in ms',
+  labelNames: ['method', 'route', 'code'],
+  buckets: [
+    0.00001,
+    0.00005,
+    0.0001,
+    0.00025,
+    0.0005,
+    0.001,
+    0.0025,
+    0.005,
+    0.01
+  ]
+});
 
 prometheusExporter.histogramLabels = (histogram, req, res) => {
   return histogram.labels(req.method, res.route, res.statusCode);

@@ -2,14 +2,7 @@ const http = require('http');
 const path = require('path');
 const fs = require('fs');
 
-const { performance } = require('perf_hooks');
-
 const dbGetOne = require('./controllers/MongoDBController.js');
-const prom = require('./prometheus/prometheus.js');
-
-const htmlHist = prom.htmlDurationMicroseconds;
-const dataHist = prom.dataRequestDurationMicroseconds;
-const statHist = prom.staticRequestDurationMicroseconds;
 
 let html;
 let staticFileCache = {};
@@ -23,6 +16,27 @@ const isStaticRequest = (url) => {
   return url.includes('.');
 };
 
+const handleError = (err, res) => {
+  console.log(err);
+  res.writeHead(500);
+  res.write('ERROR 500: Internal Server Error');
+  res.end();
+  return;
+};
+
+const handleGoodResponse = (data, res) => {
+  res.writeHead(200);
+  res.write(data);
+  res.end();
+  return;
+};
+const handleInvalidId = (id, res) => {
+  res.writeHead(404);
+  res.write('ERROR 404: Invalid Lookup');
+  res.end();
+  return;
+};
+
 const basePath = './client/dist';
 const serveStatic = (req, res) => {
   const resolvedBase = path.resolve(basePath);
@@ -32,40 +46,30 @@ const serveStatic = (req, res) => {
   if (staticFileCache[fileLoc] !== undefined) {
     res.statusCode = 200;
     res.write(staticFileCache[fileLoc]);
-    return res.end();
+    res.end();
+    return;
   }
 
   fs.readFile(fileLoc, (err, data) => {
-    if (err) {
-      res.writeHead(404);
-      res.write('ERROR 404: Not found');
-      return res.end();
-    }
+    if (err) return handleError(err, res);
 
     staticFileCache[fileLoc] = data;
-
     res.statusCode = 200;
     res.write(data);
-    return res.end();
+    res.end();
+    return;
   });
 };
 
-//note not handling bad requests at all here
-// need to add later
 const requestHandler = (req, res) => {
-  const time = performance.now();
-  prom.totalRequests.inc();
-  const htmlTimer = htmlHist.startTimer();
-  const statTimer = statHist.startTimer();
-  const dataTimer = dataHist.startTimer();
+  const id = getId(req.url);
 
-  if (req.url.includes('metrics')) {
-    return prom.serveMetrics(req, res);
-  } else if (req.url.includes('loaderio-f0337bc72e02d581ff9c52de594a4351')) {
-    res.write('loaderio-f0337bc72e02d581ff9c52de594a4351');
-    return res.end();
+  if (req.url.includes('loaderio-9a0cfa999a746a16178738e7dfcf3aaf')) {
+    res.write('loaderio-9a0cfa999a746a16178738e7dfcf3aaf');
+    res.end();
+    return;
   } else if (req.url.includes('/api/details/')) {
-    dbGetOne(getId(req.url), (err, data) => {
+    dbGetOne(id, (err, data) => {
       if (err) {
         console.log(err);
         res.writeHead(500);
@@ -73,29 +77,21 @@ const requestHandler = (req, res) => {
         return;
       }
 
+      if (data === null) return handleInvalidId(id, res);
+
       res.writeHead(200);
       res.write(JSON.stringify([data]));
       res.end();
-
-      // console.log('database:', performance.now() - time);
-      prom.histogramLabels(dataHist, req, res);
-
-      return dataTimer();
+      return;
     });
   } else if (isStaticRequest(req.url)) {
     serveStatic(req, res);
-
-    // console.log('staticFile:', performance.now() - time);
-    prom.histogramLabels(statHist, req, res);
-    return statTimer();
+    return;
   } else {
     res.writeHead(200, { 'Content-type': 'text/html' });
     res.write(html);
     res.end();
-
-    // console.log('html:', performance.now() - time);
-    prom.histogramLabels(htmlHist, req, res);
-    return htmlTimer();
+    return;
   }
 };
 

@@ -5,12 +5,18 @@
   "main": "webpack.config.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "prestart": "webpack -p",
-    "start": "nodemon server/index.js",
-    "dev-build": "webpack -d --watch",
-    "build": "webpack -p",
+    "predev": "webpack -d --weatch",
+    "dev": "nodemon server/index.js",
+    "preexpressStart": "webpack -p",
+    "expressStart": "node --inspect=0.0.0.0:9229 server/express.js",
     "prehttpStart": "webpack -p",
-    "httpStart": "node --inspect=0.0.0.0:9229 server/httpServer.js"
+    "httpStart": "node --inspect=0.0.0.0:9229 server/http.js",
+    "prepromStart": "webpack -p",
+    "promStart": "node --inspect=0.0.0.0:9229 server/prom.js",
+    "preredisStart": "webpack -p",
+    "redisStart": "node --inspect=0.0.0.0:9229 server/redis.js",
+    "prerefactorStart": "webpack -p",
+    "refactorStart": "node --inspect=0.0.0.0:9229 server/refactor.js"
   },
   "repository": {
     "type": "git",
@@ -40,6 +46,7 @@
     "pg-hstore": "^2.3.2",
     "prom-client": "^11.2.1",
     "react-modal": "^3.8.1",
+    "redis": "^2.8.0",
     "winston": "^3.1.0"
   },
   "devDependencies": {

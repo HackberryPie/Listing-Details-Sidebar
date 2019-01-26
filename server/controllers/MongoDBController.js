@@ -15,4 +15,11 @@ const retrieveOne = (id, cb) => {
   client.collection('listings').findOne({ _id: id }, cb);
 };
 
+const getMany = (batch, cb) => {
+  client
+    .collection('listings')
+    .find({ _id: { $in: batch } })
+    .toArray(cb);
+};
+
 module.exports = retrieveOne;
