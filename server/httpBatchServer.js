@@ -1,95 +1,143 @@
-const util = require('./utilities/serverUtility.js');
-const dbGetOne = require('./controllers/MongoDBController.js');
-const prom = require('./prometheus/prometheus.js');
-const redClient = require('./redis/redis.js');
+const http = require('http');
+const path = require('path');
+const fs = require('fs');
 
-const htmlHist = prom.htmlDurationMicroseconds;
-const dataHist = prom.dataRequestDurationMicroseconds;
-const cacheHist = prom.cacheRequestDurationMicroseconds;
-const statHist = prom.staticRequestDurationMicroseconds;
+const { performance } = require('perf_hooks');
 
+const dbGetMany = require('./controllers/MongoDBController.js');
+
+let html;
+let staticFileCache = {};
+
+let requestBatch = [];
+
+const newRequest = (id, res) => {
+  if (requestBatch.length < 25) {
+    let currentRequest = {};
+    currentRequest.id = id;
+    currentRequest.res = res;
+    requestBatch.push(currentRequest);
+  }
+};
+
+const getId = (url) => {
+  const start = url.lastIndexOf('/') + 1;
+  return url.substring(start, url.length);
+};
+
+const isStaticRequest = (url) => {
+  return url.includes('.');
+};
+
+const basePath = './client/dist';
+const serveStatic = (req, res) => {
+  const resolvedBase = path.resolve(basePath);
+  const safeSuffix = path.normalize(req.url).replace(/^(\.\.[\/\\])+/, '');
+  const fileLoc = path.join(resolvedBase, safeSuffix);
+
+  if (staticFileCache[fileLoc] !== undefined) {
+    res.statusCode = 200;
+    res.write(staticFileCache[fileLoc]);
+    return res.end();
+  }
+
+  fs.readFile(fileLoc, (err, data) => {
+    if (err) {
+      res.writeHead(404);
+      res.write('ERROR 404: Not found');
+      return res.end();
+    }
+
+    staticFileCache[fileLoc] = data;
+
+    res.statusCode = 200;
+    res.write(data);
+    return res.end();
+  });
+};
+
+//note not handling bad requests at all here
+// need to add later
 const requestHandler = (req, res) => {
-  const id = util.getId(req.url);
-
-  prom.totalRequests.inc();
-  const htmlTimer = htmlHist.startTimer();
-  const statTimer = statHist.startTimer();
-  const dataTimer = dataHist.startTimer();
-  const cacheTimer = cacheHist.startTimer();
+  const time = performance.now();
 
   if (req.url.includes('metrics')) {
-    // ==========================
-    // ===    SERVE METRICS   ===
-    // ==========================
-    prom.serveMetrics(req, res);
-    return;
-  } else if (req.url.includes('loaderio-9a0cfa999a746a16178738e7dfcf3aaf')) {
-    // ==========================
-    // ===    LOADERIO INFO   ===
-    // ==========================
-    return util.handleGoodResponse(
-      'loaderio-9a0cfa999a746a16178738e7dfcf3aaf',
-      res
-    );
+    return prom.serveMetrics(req, res);
+  } else if (req.url.includes('loaderio-f0337bc72e02d581ff9c52de594a4351')) {
+    res.write('loaderio-f0337bc72e02d581ff9c52de594a4351');
+    return res.end();
   } else if (req.url.includes('/api/details/')) {
-    // ==========================
-    // ===     SERVE DATA     ===
-    // ==========================
-    redClient.get(id, (err, cachedData) => {
+    let batch = [
+      { _id: getId(req.url) },
+      { _id: 101 },
+      { _id: 312 },
+      { _id: 1323 },
+      { _id: 101231 }
+    ];
+    let otherBatch = [
+      '1',
+      '2',
+      '3',
+      '4',
+      '5',
+      '123123',
+      '124',
+      '1234',
+      '65345',
+      '92340',
+      '8741',
+      '990238',
+      '27239',
+      '974032',
+      '123',
+      '14156',
+      '63451',
+      '65',
+      '9124550'
+    ];
+    //twice as long for 15x more data per query. This is what i neeeeeeeed.
+    dbGetMany(otherBatch, (err, data) => {
       if (err) {
-        util.handleError(err, res);
-        prom.dataFailures.inc();
+        console.log(err);
+        res.writeHead(500);
+        res.end();
         return;
       }
-      if (cachedData !== null) {
-        util.handleGoodResponse(cachedData, res);
-        prom.cacheSuccess.inc();
-        prom.dataSuccess.inc();
-        cacheTimer();
-        return;
-      }
+      console.log('To get data:', performance.now() - time);
+      res.writeHead(200);
+      //res.write(JSON.stringify([data]));
+      res.end();
 
-      dbGetOne(id, (err, data) => {
-        if (err) {
-          util.handleError(err, res);
-          prom.dataFailures.inc();
-          return;
-        }
-        if (data === null) {
-          util.handleInvalidId(id, res);
-          prom.dataInvalid.inc();
-          return;
-        }
-        util.handleGoodResponse(JSON.stringify([data]), res);
-
-        //Lazy-Loading Cache
-        redClient.setex(id, util.timeToExpire(id), JSON.stringify([data]));
-
-        prom.dataSuccess.inc();
-        prom.histogramLabels(dataHist, req, res);
-        dataTimer();
-        return;
-      });
+      // console.log('database:', performance.now() - time);
+      return;
     });
-  } else if (util.isStaticRequest(req.url)) {
-    // ==========================
-    // === SERVE STATIC FILES ===
-    // ==========================
+  } else if (isStaticRequest(req.url)) {
+    serveStatic(req, res);
 
-    util.serveStatic('./client/dist', req, res);
-    prom.histogramLabels(statHist, req, res);
-    statTimer();
+    // console.log('staticFile:', performance.now() - time);
     return;
   } else {
-    // ==========================
-    // ===     SERVE HTML     ===
-    // ==========================
-    util.serveHTML('./client/dist/index.html', res);
-    prom.histogramLabels(htmlHist, req, res);
-    htmlTimer();
+    res.writeHead(200, { 'Content-type': 'text/html' });
+    res.write(html);
+    res.end();
+
+    // console.log('html:', performance.now() - time);
     return;
   }
 };
 
 let port = 3012;
-util.startServer(port, requestHandler);
+fs.readFile('./client/dist/index.html', (err, data) => {
+  if (err) {
+    console.log(err);
+  } else {
+    html = data;
+    http.createServer(requestHandler).listen(port, (err) => {
+      if (err) {
+        console.log(err);
+      } else {
+        console.log('listening on port: ' + port);
+      }
+    });
+  }
+});

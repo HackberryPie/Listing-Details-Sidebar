@@ -8,6 +8,11 @@ const dataHist = prom.dataRequestDurationMicroseconds;
 const cacheHist = prom.cacheRequestDurationMicroseconds;
 const statHist = prom.staticRequestDurationMicroseconds;
 
+let batch = [];
+let req = {
+  id: null
+};
+
 const requestHandler = (req, res) => {
   const id = util.getId(req.url);
 
@@ -18,14 +23,23 @@ const requestHandler = (req, res) => {
   const cacheTimer = cacheHist.startTimer();
 
   if (req.url.includes('metrics')) {
+    // ==========================
+    // ===    SERVE METRICS   ===
+    // ==========================
     prom.serveMetrics(req, res);
     return;
   } else if (req.url.includes('loaderio-9a0cfa999a746a16178738e7dfcf3aaf')) {
+    // ==========================
+    // ===    LOADERIO INFO   ===
+    // ==========================
     return util.handleGoodResponse(
       'loaderio-9a0cfa999a746a16178738e7dfcf3aaf',
       res
     );
   } else if (req.url.includes('/api/details/')) {
+    // ==========================
+    // ===     SERVE DATA     ===
+    // ==========================
     redClient.get(id, (err, cachedData) => {
       if (err) {
         util.handleError(err, res);
@@ -38,6 +52,33 @@ const requestHandler = (req, res) => {
         prom.dataSuccess.inc();
         cacheTimer();
         return;
+      }
+
+      const request = {};
+      request.id = id;
+      request.res = res;
+
+      if (batch.length < 15) {
+        batch.push(request);
+      }
+
+      if (batch.length >= 15) {
+        let dbFormat = batch.map((request) => {
+          return request.id;
+        });
+
+        dbGetMany(dbFormat, (err, data) => {
+          if (err) {
+            for (let i = 0; i < batch.length; i++) {
+              util.handleError(err, batch[i].res);
+            }
+          }
+
+          for (let i = 0; i < data.length; i++) {
+            if (batch[i][data[i][_id]] !== undefined)
+              util.handleGoodResponse(data[i][_id], batch[i][data[i][_id]]);
+          }
+        });
       }
 
       dbGetOne(id, (err, data) => {
@@ -62,11 +103,17 @@ const requestHandler = (req, res) => {
       });
     });
   } else if (util.isStaticRequest(req.url)) {
+    // ==========================
+    // === SERVE STATIC FILES ===
+    // ==========================
     util.serveStatic('./client/dist', req, res);
     prom.histogramLabels(statHist, req, res);
     statTimer();
     return;
   } else {
+    // ==========================
+    // ===     SERVE HTML     ===
+    // ==========================
     util.serveHTML('./client/dist/index.html', res);
     prom.histogramLabels(htmlHist, req, res);
     htmlTimer();
