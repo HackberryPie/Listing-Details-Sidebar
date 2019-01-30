@@ -49,6 +49,15 @@ const serveStatic = (req, res) => {
   const safeSuffix = path.normalize(req.url).replace(/^(\.\.[\/\\])+/, '');
   const fileLoc = path.join(resolvedBase, safeSuffix);
 
+  console.log(
+    'base',
+    resolvedBase,
+    'safe suffix',
+    safeSuffix,
+    'fileLoc',
+    fileLoc
+  );
+
   if (staticFileCache[fileLoc] !== undefined) {
     res.statusCode = 200;
     res.write(staticFileCache[fileLoc]);
