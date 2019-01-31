@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 
 const dbGetOne = require('./controllers/MongoDBController.js');
+const { performance } = require('perf_hooks');
 
 let html;
 let staticFileCache = {};
@@ -62,6 +63,8 @@ const serveStatic = (req, res) => {
 };
 
 const requestHandler = (req, res) => {
+  //console.log(req.url);
+  const time = performance.now();
   const id = getId(req.url);
 
   if (req.url.includes('loaderio-9a0cfa999a746a16178738e7dfcf3aaf')) {
@@ -82,6 +85,7 @@ const requestHandler = (req, res) => {
       res.writeHead(200);
       res.write(JSON.stringify([data]));
       res.end();
+      //console.log('it took', performance.now() - time, 'to get the data');
       return;
     });
   } else if (isStaticRequest(req.url)) {

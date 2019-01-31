@@ -1,6 +1,8 @@
 const express = require('express');
 const fs = require('fs');
 
+const { performance } = require('perf_hooks');
+
 const bodyParser = require('body-parser');
 const path = require('path');
 const compression = require('compression');
@@ -8,6 +10,13 @@ const compression = require('compression');
 const mongoDBGetOne = require('./controllers/MongoDBController.js');
 
 const app = express();
+
+let time;
+
+app.use((req, res, next) => {
+  time = performance.now();
+  next();
+});
 
 app.use(compression());
 app.use(bodyParser.json());
@@ -17,6 +26,7 @@ app.get('/api/details/:id', (req, res) => {
   const { id } = req.params;
   mongoDBGetOne(id, (err, data) => {
     res.send([data]);
+    //console.log('it took', performance.now() - time, 'to get the data');
   });
 });
 
