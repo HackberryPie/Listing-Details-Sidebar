@@ -4,13 +4,13 @@
 
 The goal of this project was to [inherit a microservice component from a collegue](https://github.com/Team-Elysium/listing-details) with a basic backend and scale it to production levels capable of handling thousands of requests per second. The scope of my work is exclusive to the backend including the:
 
-- Server: HTTP
-- Proxy: HTTP
-- Database: MongoDB
-- Remote-Cache: Redis
-- Remote-Monitoring-Service: Prometheus/Grafana
-- Load-Balancer: Nginx
-- Deployment: Docker/AWS EC2 t2.micro
+- Server: [HTTP](https://nodejs.org/api/http.html)
+- Proxy: [HTTP](https://nodejs.org/api/http.html)
+- Database: [MongoDB](https://www.mongodb.com/)
+- Remote-Cache: [Redis](https://redis.io/)
+- Remote-Monitoring-Service: [Prometheus](https://prometheus.io/)/[Grafana](https://grafana.com/)
+- Load-Balancer: [Nginx](https://www.nginx.com/)
+- Deployment: [Docker](https://www.docker.com/)/[AWS-EC2-t2.micro](https://aws.amazon.com/ec2/instance-types/t2/)
 
 ![service-flow-chart](documentation/images/Flow-Chart.png)
 
@@ -49,20 +49,13 @@ Sources:
 - [Five-Performance-Testing-Considerations...](https://rraheja.wordpress.com/2011/02/08/5-performance-testing-considerations-for-application-integrations/)
 - [Ultimate-Guide-Performance-Testing...](https://stackify.com/ultimate-guide-performance-testing-and-software-testing/)
 
-<!-- TO DO -->
-<!-- ############################################ -->
+## Server & Proxy
 
-## Service & Proxy
+**Express** was implemented in the inherited code base as the framework of choice. Express offers a lot of conveniences such as simplifying a server's code base as well as exposing a lot of tooling that would otherwise be quite complex.
 
-The Service and Proxy used for this project was also an inherited [repository](https://github.com/Team-Elysium/real-estate-listing-page) from collegues. The only optimizations made to the Proxy a refactor to barebones HTTP from Express. Subsequently an HTML page was required as the previous iteration was using a view engine coupled with ejs files.
+**HTTP** is a "baked into" Node as a module. This module is notably fast compared to frameworks, which makes sense since frameworks sit ontop of HTTP. The drawback of using HTTP is having to explicitly handling all cases. If implemented correctly though, an HTTP server is capable of [handling more requests per second](https://raygun.com/blog/nodejs-vs-hapi-express-restify-koa/).
 
-The Service was also
-
-## Server
-
-While Express exposes and provides a lot of tooling built ontop of Node's HTTP, it [comes at a steep cost](https://raygun.com/blog/nodejs-vs-hapi-express-restify-koa/). Because our proxy and server are both implementing rather simple functionality, refactoring to use HTTP would be greatly benefitial.
-
-<!-- ############################################ -->
+**For this project** the server and proxy were refactored to use raw HTTP for the performance boost. Nither one was too complex and we have a very limited amount of endpoint to handle.
 
 ## Database
 
@@ -127,7 +120,7 @@ Additionally we will add a _jitter_ of a random amount of time from 0 to the set
 
 ## Monitoring
 
-_Monitoring_ is an important part of any system. Without monitoring we could only ever be reactionary to problems instead of detecting them early and acting _before_ it manifests into something larger.
+**Monitoring** is an important part of any system. Without monitoring we could only ever be reactionary to problems instead of detecting them early and acting _before_ it manifests into something larger.
 
 [**Prometheus**](https://prometheus.io/) is an open source monitoring tool. With it, one can get regularly updated with the servers health and performance. Prometheus itself is a seperate server that will "reach out" and hit an endpoint that is defined on the desired server. The server will then use _prom-client_ to serve up the data, to Prometheus.
 
