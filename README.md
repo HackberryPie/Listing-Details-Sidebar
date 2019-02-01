@@ -75,14 +75,6 @@ These days a lot of databases are starting to blur the lines between what kind o
 
 [**Redis**](https://redis.io/) is a popular tool when implementing caching. When considering caching there are two main strategies to consider, _lazy-loading_ and _write through_. For this section I explain my reasoning behind the choice I make.
 
-Skip to:
-
-- [Approaches](#approaches)
-- [Timing](#timing)
-- [Evictions](#evictions)
-
-### APPROACHES
-
 **Lazy-Loading** is checking the cache and, on a miss, retrieving the data from the database, writing to the cache, and finally responding with the data. This method can be beneficial as we only store things that are actively being looked up. This can be a problem with very random and relatively low demand data points being stored too often. It's also possible that we return incorrect data if something has been changed/updated since it was last stored in the cache.
 
 **Write Through** is proactively updating the cache when we update the database so the cache is always up to date. This can keep our cache always returning the correct data but we again run into the problem of storing data points that might be low in demand and missing some high demand data points.
@@ -90,8 +82,6 @@ Skip to:
 **For this project** simple _lazy-loading_ is utilized for this project. The application does not have any write-to-database features but if it did, we would need to communicate with the other microservices to be updated with the information.
 
 Overall a combination of the two is preferable. _Lazy-loading_ to keep high demand data in store as well as _write through_ to keep it up to date. Another important consideration to make during configuration is time until expiration.
-
-### TIMING
 
 **Timing** is a critical. Not only will an appropriate _time to expiration_ affect the server response time it can also determine the loads the database experiences at any given point.
 
@@ -102,8 +92,6 @@ Something to consider as well is how much _data expires at the same time_. If th
 **For this project** I want high demand areas to be cached. One hundred random listings were chosen as the “top apartments”. As stated before, the project only uses _lazy-loading_, meaning anytime we miss a lookup we will cache the item after the it is retrieved from the database. One thing to differentiate the top one hundred is the amount of time until expiration. These will be stored for 5 minutes whereas everything else will be kept for 1 minute.
 
 Additionally we will add a _jitter_ of a random amount of time from 0 to the set expiration time. At most we will double the time in the cache and at least we will add nothing.
-
-### EVICTIONS
 
 **Evictions** occur when the cache has run out of usable memory. It must decide on how to handle the data meant to be stored and the data already stored. There are a few options to choose from for Redis:
 
@@ -142,11 +130,11 @@ With these simple metrics one can determine a baseline for the health of their s
 
 ## Load-Balancing
 
+[**Nginx**](https://www.nginx.com/) is a web server that can be used as many different tools. The webside touts many different benefits but in this case it will be used as a reverse proxy.
+
 **Load Balancing** is the managment of requests across multiple instances of the same service. The idea behind load balancing is to horizontally optimize the total load the service can handle. If a single service can only handle 1000 requests per second then it stands to reason 3 instances can handle 3 times as many. This was implemented to "open up" the bottleneck that was the single service.
 
-[**Nginx**](https://www.nginx.com/) is a web server that can be used as many different tools. The webside touts many different benefits but I will use it as a reverse proxy. The main consideration for load balancing is how we determine which instance we choose to route the request to know as _scheduling_.
-
-### Scheduling
+**Scheduling** refers to the decision making the load balancer implements to choose where the most recent request is going to be directed to. There are a few options which consist of:
 
 **Round Robin** is when the load balancer makes a list of available services. When it recieves a request it sends it to the first in the list. For all subsequent requests, it moves to the next service on the list. When it reaches the end of the list it resets to the beginning.
 
